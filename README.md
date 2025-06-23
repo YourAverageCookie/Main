@@ -1,1 +1,1 @@
--- more stuff will be added soon 
+-- these are mainly roblox e*ploi*s
