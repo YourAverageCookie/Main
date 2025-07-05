@@ -1,5 +1,5 @@
---Gatekeeping is for the weak
----- atrexus
+-- gatekeeping is for the weak
+-- made by 2 scripters
 
 
 local scanned = {} -- prevent infinite loops
