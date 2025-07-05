@@ -1,3 +1,10 @@
+-- Doors Script
+-- Breaks At Door 50
+-- You Have To Die (TO FIGURE OR IT WILL NOT WORK)
+-- Then Revive
+-- If You On Super Hard Mode TP A Banana To You
+-- Enough Yapping Heres The Script:
+
 game:GetService("Players").LocalPlayer.PlayerGui.MainUI.ItemShop:Destroy()
 require(game:GetService("Players").LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game).freemouse = false 
 game:GetService("ReplicatedStorage").ClientModules.EntityModules.Void:Destroy()
