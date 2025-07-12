@@ -1,5 +1,4 @@
-
--- Roblox Console Style Command Bar (Cookie's Version) with Bubble UI, RemoteEvent, and Permission Check
+-- scripted by cookie & 2 other goofballs
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
