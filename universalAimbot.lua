@@ -100,7 +100,7 @@ end
 -- ✅ FIXED AUTO STACK POSITIONING
 local AimbotList, layout1 = MakeList(105, Color3.fromRGB(40, 90, 255), "AIMBOT")
 
-local gap = 10
+local gap = 0.5
 local TeleportList, layout2 = MakeList(
 105 + 25 + 140 + gap,
 Color3.fromRGB(0, 170, 255),
