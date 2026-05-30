@@ -86,7 +86,7 @@ Container.Parent = ScreenGui
 -- DRAG HANDLE / AIMBOT TOGGLE
 local DragHandle = Instance.new("TextButton")
 DragHandle.Size = UDim2.new(1, 0, 0, 45)
-DragHandle.BackgroundColor3 = Color3.fromRGB(0,255,0)
+DragHandle.BackgroundColor3 = Color3.fromRGB(255,0,0)
 DragHandle.Text = "AIMBOT OFF"
 DragHandle.TextColor3 = Color3.fromRGB(255,255,255)
 DragHandle.Font = Enum.Font.FredokaOne
