@@ -79,38 +79,6 @@ Container.BackgroundTransparency = 1
 Container.Parent = Gui
 
 ------------------------------------------------
--- SIMPLE DRAG SYSTEM (WORKING)
-------------------------------------------------
-local dragging = false
-local dragStart
-local startPos
-
-DragHandle.InputBegan:Connect(function(input)
-if input.UserInputType == Enum.UserInputType.MouseButton1 then
-dragging = true
-dragStart = input.Position
-startPos = Container.Position
-end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-local delta = input.Position - dragStart
-
-Container.Position = UDim2.new(
-startPos.X.Scale,
-startPos.X.Offset + delta.X,
-startPos.Y.Scale,
-startPos.Y.Offset + delta.Y
-)
-end
-end)
-
-UserInputService.InputEnded:Connect(function()
-dragging = false
-end)
-
-------------------------------------------------
 -- TOGGLE BUTTON
 ------------------------------------------------
 local Toggle = Instance.new("TextButton")
@@ -135,7 +103,43 @@ List.Parent = Container
 local layout = Instance.new("UIListLayout")
 layout.Parent = List
 layout.Padding = UDim.new(0,4)
+  
+local dragging = false
+local dragStart
+local startPos
 
+-- DragHandle IS your button (important)
+local DragHandle = Toggle
+
+DragHandle.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = Container.Position
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if not dragging then return end
+
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+
+		Container.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+  
 ------------------------------------------------
 -- REFRESH PLAYERS FIXED
 ------------------------------------------------
