@@ -97,36 +97,44 @@ Instance.new("UICorner", Toggle)
 local dragging = false
 local dragStart
 local startPos
+local activeInput
 
 Toggle.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+
 		dragging = true
-		dragStart = UserInputService:GetMouseLocation()
+		activeInput = input
+
+		dragStart = input.Position
 		startPos = Container.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+				activeInput = nil
+			end
+		end)
 	end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
 	if not dragging then return end
-	if input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
+	if activeInput and input ~= activeInput then return end
 
-	local current = UserInputService:GetMouseLocation()
-	local delta = current - dragStart
+	if input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch then
 
-	Container.Position = UDim2.new(
-		startPos.X.Scale,
-		startPos.X.Offset + delta.X,
-		startPos.Y.Scale,
-		startPos.Y.Offset + delta.Y
-	)
-end)
+		local delta = input.Position - dragStart
 
-UserInputService.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = false
+		Container.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
 	end
 end)
-
 ------------------------------------------------
 -- PLAYER LIST HEADER (OPEN/CLOSE)
 ------------------------------------------------
