@@ -79,22 +79,71 @@ Container.BackgroundTransparency = 1
 Container.Parent = Gui
 
 ------------------------------------------------
--- TOGGLE BUTTON
+-- TOGGLE (ALSO DRAG HANDLE)
 ------------------------------------------------
 local Toggle = Instance.new("TextButton")
 Toggle.Size = UDim2.new(1,0,0,40)
-Toggle.Position = UDim2.new(0,0,0,40)
+Toggle.Position = UDim2.new(0,0,0,0)
 Toggle.Text = "AIMBOT OFF"
 Toggle.BackgroundColor3 = Color3.fromRGB(255,0,0)
 Toggle.Font = Enum.Font.FredokaOne
 Toggle.TextScaled = true
 Toggle.Parent = Container
+Instance.new("UICorner", Toggle)
 
 ------------------------------------------------
--- LIST (UNDER BUTTON FIXED)
+-- DRAG SYSTEM (TOGGLE IS HANDLE)
+------------------------------------------------
+local dragging = false
+local dragStart
+local startPos
+
+Toggle.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = UserInputService:GetMouseLocation()
+		startPos = Container.Position
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if not dragging then return end
+	if input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
+
+	local current = UserInputService:GetMouseLocation()
+	local delta = current - dragStart
+
+	Container.Position = UDim2.new(
+		startPos.X.Scale,
+		startPos.X.Offset + delta.X,
+		startPos.Y.Scale,
+		startPos.Y.Offset + delta.Y
+	)
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+------------------------------------------------
+-- PLAYER LIST HEADER (OPEN/CLOSE)
+------------------------------------------------
+local ListHeader = Instance.new("TextButton")
+ListHeader.Size = UDim2.new(1,0,0,25)
+ListHeader.Position = UDim2.new(0,0,0,50)
+ListHeader.Text = "PLAYERS ▼"
+ListHeader.BackgroundColor3 = Color3.fromRGB(30,30,30)
+ListHeader.TextColor3 = Color3.new(1,1,1)
+ListHeader.Font = Enum.Font.FredokaOne
+ListHeader.Parent = Container
+
+------------------------------------------------
+-- PLAYER LIST
 ------------------------------------------------
 local List = Instance.new("ScrollingFrame")
-List.Size = UDim2.new(1,0,0,330)
+List.Size = UDim2.new(1,0,0,340)
 List.Position = UDim2.new(0,0,0,80)
 List.BackgroundColor3 = Color3.fromRGB(40,90,255)
 List.ScrollBarThickness = 6
@@ -103,78 +152,56 @@ List.Parent = Container
 local layout = Instance.new("UIListLayout")
 layout.Parent = List
 layout.Padding = UDim.new(0,4)
-  
-local dragging = false
-local dragStart
-local startPos
 
--- DragHandle IS your button (important)
-local DragHandle = Toggle
+local listOpen = true
 
-DragHandle.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = Container.Position
-	end
+ListHeader.MouseButton1Click:Connect(function()
+	listOpen = not listOpen
+	List.Visible = listOpen
+	ListHeader.Text = listOpen and "PLAYERS ▼" or "PLAYERS ►"
 end)
 
-UserInputService.InputChanged:Connect(function(input)
-	if not dragging then return end
-
-	if input.UserInputType == Enum.UserInputType.MouseMovement then
-		local delta = input.Position - dragStart
-
-		Container.Position = UDim2.new(
-			startPos.X.Scale,
-			startPos.X.Offset + delta.X,
-			startPos.Y.Scale,
-			startPos.Y.Offset + delta.Y
-		)
-	end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = false
-	end
-end)
-  
 ------------------------------------------------
--- REFRESH PLAYERS FIXED
+-- REFRESH PLAYERS
 ------------------------------------------------
 local function Refresh()
+
 for _,v in List:GetChildren() do
-if v:IsA("TextButton") then v:Destroy() end
+	if v:IsA("TextButton") then v:Destroy() end
 end
 
 for _,p in Players:GetPlayers() do
-if p ~= LocalPlayer then
+	if p ~= LocalPlayer then
 
-local b = Instance.new("TextButton")
-b.Size = UDim2.new(1,-10,0,30)
-b.Text = p.Name
-b.Font = Enum.Font.SourceSansBold
-b.TextScaled = true
-b.Parent = List
+		local b = Instance.new("TextButton")
+		b.Size = UDim2.new(1,-10,0,30)
+		b.Text = p.Name
+		b.Font = Enum.Font.FredokaOne
+		b.TextScaled = true
+		b.Parent = List
 
-b.MouseButton1Click:Connect(function()
-SelectedAimbotPlayer = p
-end)
+		b.MouseButton1Click:Connect(function()
+			SelectedAimbotPlayer = p
+		end)
 
+	end
 end
-end
 
+task.wait()
 List.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y)
 end
 
 Players.PlayerAdded:Connect(Refresh)
 Players.PlayerRemoving:Connect(Refresh)
-task.wait(0.2)
+
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	List.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y)
+end)
+
 Refresh()
 
 ------------------------------------------------
--- AIM
+-- AIMBOT LOOP
 ------------------------------------------------
 RunService.RenderStepped:Connect(function()
 if not AimbotEnabled then return end
@@ -188,18 +215,18 @@ end
 end)
 
 ------------------------------------------------
--- TOGGLE LOGIC
+-- TOGGLE LOGIC (COLOR CHANGE)
 ------------------------------------------------
 Toggle.MouseButton1Click:Connect(function()
-AimbotEnabled = not AimbotEnabled
+	AimbotEnabled = not AimbotEnabled
 
-if AimbotEnabled then
-Toggle.Text = "AIMBOT ON"
-Toggle.BackgroundColor3 = Color3.fromRGB(0,255,0)
-else
-Toggle.Text = "AIMBOT OFF"
-Toggle.BackgroundColor3 = Color3.fromRGB(255,0,0)
-end
+	if AimbotEnabled then
+		Toggle.Text = "AIMBOT ON"
+		Toggle.BackgroundColor3 = Color3.fromRGB(0,255,0)
+	else
+		Toggle.Text = "AIMBOT OFF"
+		Toggle.BackgroundColor3 = Color3.fromRGB(255,0,0)
+	end
 end)
 
 end
@@ -208,12 +235,12 @@ end
 -- LOGIN CHECK
 ------------------------------------------------
 Button.MouseButton1Click:Connect(function()
-if TextBox.Text == SecretKey then
-LockGui:Destroy()
-initAdmin()
-else
-Button.Text = "Wrong Code"
-task.wait(1)
-Button.Text = "Enter"
-end
+	if TextBox.Text == SecretKey then
+		LockGui:Destroy()
+		initAdmin()
+	else
+		Button.Text = "Wrong Code"
+		task.wait(1)
+		Button.Text = "Enter"
+	end
 end)
