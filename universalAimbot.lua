@@ -175,17 +175,18 @@ if hrp then
 Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, hrp.Position)
 end
 end)
-
+	
 -- TOGGLE
+	
 DragHandle.MouseButton1Click:Connect(function()
 	AimbotEnabled = not AimbotEnabled
 
 	if AimbotEnabled then
 		DragHandle.Text = "AIMBOT ON"
-		DragHandle.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- green
+		DragHandle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
 	else
 		DragHandle.Text = "AIMBOT OFF"
-		DragHandle.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- red
+		DragHandle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 	end
 end)
 
@@ -193,12 +194,12 @@ end)
 -- LOGIN CHECK
 ----------------------------------------------------------------
 Button.MouseButton1Click:Connect(function()
-if TextBox.Text == SecretKey then
-LockGui:Destroy()
-initAdmin()
-else
-Button.Text = "Wrong Code"
-task.wait(1)
-Button.Text = "Enter"
-end
+	if TextBox.Text == SecretKey then
+		LockGui:Destroy()
+		initAdmin()
+	else
+		Button.Text = "Wrong Code"
+		task.wait(1)
+		Button.Text = "Enter"
+	end
 end)
