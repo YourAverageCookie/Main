@@ -1,151 +1,191 @@
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
-------------------------------------------------
--- 🔐 SSC SETUP
-------------------------------------------------
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local RS = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
-local secrets = Instance.new("Folder")
+-- SECURE STORAGE
+local secrets = Instance.new("Folder", RS)
 secrets.Name = "Secrets"
-secrets.Parent = RS
 
-local SSC = Instance.new("StringValue")
+local SSC = Instance.new("StringValue", secrets)
 SSC.Name = "SuperSecretCode"
 SSC.Value = "NahIdWin"
-SSC.Parent = secrets
 
 local SecretKey = SSC.Value
 
-------------------------------------------------
--- 🔐 LOGIN GUI
-------------------------------------------------
+-- STATE
+local SelectedAimbotPlayer = nil
+local SelectedTeleportPlayer = nil
+local AimbotEnabled = false
+
+----------------------------------------------------------------
+-- 🔐 SSC LOGIN GUI (OPENING SCREEN)
+----------------------------------------------------------------
 local LockGui = Instance.new("ScreenGui")
 LockGui.Name = "SSC_Lock"
 LockGui.ResetOnSpawn = false
 LockGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 320, 0, 190)
-Frame.Position = UDim2.new(0.5, -160, 0.5, -95)
-Frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
-Frame.Parent = LockGui
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,10)
+local LockFrame = Instance.new("Frame")
+LockFrame.Size = UDim2.new(0, 300, 0, 180)
+LockFrame.Position = UDim2.new(0.5, -150, 0.5, -90)
+LockFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+LockFrame.Parent = LockGui
+Instance.new("UICorner", LockFrame).CornerRadius = UDim.new(0, 10)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1,0,0,50)
+Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
-Title.Text = "What's the Super Secret Code? 🤫"
+Title.Text = "Enter SSC Code"
 Title.TextColor3 = Color3.fromRGB(255,255,255)
 Title.Font = Enum.Font.FredokaOne
 Title.TextScaled = true
-Title.Parent = Frame
+Title.Parent = LockFrame
 
 local TextBox = Instance.new("TextBox")
-TextBox.Size = UDim2.new(0.9,0,0,40)
-TextBox.Position = UDim2.new(0.05,0,0.45,0)
+TextBox.Size = UDim2.new(0.9, 0, 0, 40)
+TextBox.Position = UDim2.new(0.05, 0, 0.4, 0)
 TextBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
 TextBox.TextColor3 = Color3.fromRGB(255,255,255)
-TextBox.PlaceholderText = "Enter code..."
+TextBox.PlaceholderText = "SuperSecretCode"
 TextBox.Font = Enum.Font.SourceSansBold
 TextBox.TextScaled = true
-TextBox.Parent = Frame
-Instance.new("UICorner", TextBox).CornerRadius = UDim.new(0,6)
+TextBox.Parent = LockFrame
+Instance.new("UICorner", TextBox).CornerRadius = UDim.new(0, 6)
 
 local Button = Instance.new("TextButton")
-Button.Size = UDim2.new(0.9,0,0,35)
-Button.Position = UDim2.new(0.05,0,0.78,0)
-Button.BackgroundColor3 = Color3.fromRGB(0,170,255)
-Button.Text = "Enter"
+Button.Size = UDim2.new(0.9, 0, 0, 35)
+Button.Position = UDim2.new(0.05, 0, 0.75, 0)
+Button.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
 Button.TextColor3 = Color3.fromRGB(255,255,255)
 Button.Font = Enum.Font.FredokaOne
 Button.TextScaled = true
-Button.Parent = Frame
-Instance.new("UICorner", Button).CornerRadius = UDim.new(0,6)
+Button.Text = "Enter"
+Button.Parent = LockFrame
+Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 6)
 
-------------------------------------------------
--- 🎮 ADMIN PANEL
-------------------------------------------------
+----------------------------------------------------------------
+-- 🚀 ADMIN PANEL FUNCTION (ONLY LOAD AFTER UNLOCK)
+----------------------------------------------------------------
 local function initAdmin()
 
-local Gui = Instance.new("ScreenGui")
-Gui.Name = "AdminGui"
-Gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AdminGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local Container = Instance.new("Frame")
-Container.Size = UDim2.new(0, 220, 0, 420)
+Container.Size = UDim2.new(0, 180, 0, 420)
 Container.Position = UDim2.new(0, 20, 0, 20)
 Container.BackgroundTransparency = 1
-Container.Parent = Gui
+Container.Parent = ScreenGui
 
-local Layout = Instance.new("UIListLayout")
-Layout.Parent = Container
-Layout.Padding = UDim.new(0, 6)
+-- DRAG HANDLE
+local DragHandle = Instance.new("TextButton")
+DragHandle.Size = UDim2.new(1, 0, 0, 45)
+DragHandle.BackgroundColor3 = Color3.fromRGB(0,255,0)
+DragHandle.Text = "AIMBOT OFF"
+DragHandle.TextColor3 = Color3.fromRGB(255,255,255)
+DragHandle.Font = Enum.Font.FredokaOne
+DragHandle.TextScaled = true
+DragHandle.Parent = Container
+Instance.new("UICorner", DragHandle).CornerRadius = UDim.new(0,10)
 
-------------------------------------------------
--- LIST SYSTEM (FIXED)
-------------------------------------------------
-local function MakeList(title, color)
+local stroke = Instance.new("UIStroke", DragHandle)
+stroke.Thickness = 2
 
-local header = Instance.new("TextButton")
-header.Size = UDim2.new(1,0,0,25)
-header.BackgroundColor3 = Color3.fromRGB(30,30,30)
-header.TextColor3 = Color3.fromRGB(255,255,255)
-header.Font = Enum.Font.SourceSansBold
-header.TextScaled = true
-header.Text = title .. " ▼"
-header.Parent = Container
+-- TELEPORT BUTTON
+local TeleportButton = Instance.new("TextButton")
+TeleportButton.Size = UDim2.new(1, 0, 0, 45)
+TeleportButton.Position = UDim2.new(0, 0, 0, 50)
+TeleportButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+TeleportButton.Text = "TELEPORT"
+TeleportButton.Font = Enum.Font.FredokaOne
+TeleportButton.TextScaled = true
+TeleportButton.Parent = Container
+Instance.new("UICorner", TeleportButton).CornerRadius = UDim.new(0,10)
+
+Instance.new("UIStroke", TeleportButton).Color = Color3.fromRGB(0,0,0)
+
+-- LIST MAKER
+local function MakeList(y, color, title)
+local toggle = Instance.new("TextButton")
+toggle.Size = UDim2.new(1,0,0,25)
+toggle.Position = UDim2.new(0,0,0,y)
+toggle.Text = title.." ▼"
+toggle.Parent = Container
 
 local frame = Instance.new("ScrollingFrame")
-frame.Size = UDim2.new(1,0,0,260)
+frame.Size = UDim2.new(1,0,0,140)
+frame.Position = UDim2.new(0,0,0,y+25)
 frame.BackgroundColor3 = color
-frame.BorderSizePixel = 0
 frame.ScrollBarThickness = 6
-frame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 frame.Parent = Container
 
-local list = Instance.new("UIListLayout")
-list.Padding = UDim.new(0, 4)
-list.Parent = frame
+Instance.new("UIListLayout", frame)
 
 local open = true
-header.MouseButton1Click:Connect(function()
+toggle.MouseButton1Click:Connect(function()
 open = not open
 frame.Visible = open
-header.Text = open and (title.." ▼") or (title.." ►")
+toggle.Text = open and (title.." ▼") or (title.." ►")
 end)
 
 return frame
 end
 
-------------------------------------------------
--- PLAYERS LIST
-------------------------------------------------
-local PlayerList = MakeList("PLAYERS", Color3.fromRGB(60,120,255))
+local AimbotList = MakeList(105, Color3.fromRGB(40,90,255), "AIMBOT")
+local TeleportList = MakeList(270, Color3.fromRGB(0,170,255), "TELEPORT")
 
-local SelectedPlayer = nil
+-- DRAG
+local dragging, dragStart, startPos
 
-local function Refresh()
-
-for _,v in PlayerList:GetChildren() do
-if v:IsA("TextButton") then v:Destroy() end
+DragHandle.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 then
+dragging = true
+dragStart = input.Position
+startPos = Container.Position
 end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+local delta = input.Position - dragStart
+Container.Position = UDim2.new(
+startPos.X.Scale,
+startPos.X.Offset + delta.X,
+startPos.Y.Scale,
+startPos.Y.Offset + delta.Y
+)
+end
+end)
+
+UserInputService.InputEnded:Connect(function()
+dragging = false
+end)
+
+-- REFRESH
+local function Refresh()
+for _,v in AimbotList:GetChildren() do if v:IsA("TextButton") then v:Destroy() end end
+for _,v in TeleportList:GetChildren() do if v:IsA("TextButton") then v:Destroy() end end
 
 for _,p in Players:GetPlayers() do
 if p ~= LocalPlayer then
 
-local btn = Instance.new("TextButton")
-btn.Size = UDim2.new(1,-10,0,30)
-btn.BackgroundColor3 = Color3.fromRGB(0,120,255)
-btn.TextColor3 = Color3.fromRGB(255,255,255)
-btn.Font = Enum.Font.SourceSansBold
-btn.TextScaled = true
-btn.Text = p.Name
-btn.Parent = PlayerList
+local b1 = Instance.new("TextButton")
+b1.Text = p.Name
+b1.Parent = AimbotList
+b1.MouseButton1Click:Connect(function()
+SelectedAimbotPlayer = p
+end)
 
-btn.MouseButton1Click:Connect(function()
-SelectedPlayer = p
-print("Selected:", p.Name)
+local b2 = Instance.new("TextButton")
+b2.Text = p.Name
+b2.Parent = TeleportList
+b2.MouseButton1Click:Connect(function()
+SelectedTeleportPlayer = p
 end)
 
 end
@@ -154,14 +194,44 @@ end
 
 Players.PlayerAdded:Connect(Refresh)
 Players.PlayerRemoving:Connect(Refresh)
-task.wait(0.2)
 Refresh()
+
+-- TOGGLES
+DragHandle.MouseButton1Click:Connect(function()
+AimbotEnabled = not AimbotEnabled
+DragHandle.Text = AimbotEnabled and "AIMBOT ON" or "AIMBOT OFF"
+DragHandle.BackgroundColor3 = AimbotEnabled and Color3.fromRGB(255,0,0) or Color3.fromRGB(0,255,0)
+end)
+
+TeleportButton.MouseButton1Click:Connect(function()
+local char = SelectedTeleportPlayer and SelectedTeleportPlayer.Character
+local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+local my = LocalPlayer.Character
+local myHRP = my and my:FindFirstChild("HumanoidRootPart")
+
+if hrp and myHRP then
+myHRP.CFrame = hrp.CFrame + Vector3.new(2,0,0)
+end
+end)
+
+-- AIM LOOP
+RunService.RenderStepped:Connect(function()
+if not AimbotEnabled then return end
+
+local char = SelectedAimbotPlayer and SelectedAimbotPlayer.Character
+local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+if hrp then
+Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, hrp.Position)
+end
+end)
 
 end
 
-------------------------------------------------
+----------------------------------------------------------------
 -- 🔓 LOGIN CHECK
-------------------------------------------------
+----------------------------------------------------------------
 Button.MouseButton1Click:Connect(function()
 if TextBox.Text == SecretKey then
 LockGui:Destroy()
