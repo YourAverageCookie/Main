@@ -6,7 +6,7 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 ------------------------------------------------
--- 🔐 SECRET SETUP
+-- 🔐 SSC
 ------------------------------------------------
 local secrets = Instance.new("Folder", RS)
 secrets.Name = "Secrets"
@@ -18,7 +18,7 @@ SSC.Value = "NahIdWin"
 local SecretKey = SSC.Value
 
 ------------------------------------------------
--- 🔐 LOGIN GUI
+-- 🔐 LOGIN UI
 ------------------------------------------------
 local LockGui = Instance.new("ScreenGui")
 LockGui.Name = "SSC_Lock"
@@ -28,12 +28,12 @@ LockGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 local Frame = Instance.new("Frame")
 Frame.Size = UDim2.new(0, 320, 0, 190)
 Frame.Position = UDim2.new(0.5, -160, 0.5, -95)
-Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
 Frame.Parent = LockGui
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,10)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 50)
+Title.Size = UDim2.new(1,0,0,50)
 Title.BackgroundTransparency = 1
 Title.Text = "What's the Super Secret Code? 🤫"
 Title.TextColor3 = Color3.fromRGB(255,255,255)
@@ -42,46 +42,43 @@ Title.TextScaled = true
 Title.Parent = Frame
 
 local TextBox = Instance.new("TextBox")
-TextBox.Size = UDim2.new(0.9, 0, 0, 40)
-TextBox.Position = UDim2.new(0.05, 0, 0.45, 0)
+TextBox.Size = UDim2.new(0.9,0,0,40)
+TextBox.Position = UDim2.new(0.05,0,0.45,0)
 TextBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
 TextBox.TextColor3 = Color3.fromRGB(255,255,255)
 TextBox.PlaceholderText = "Enter code..."
-TextBox.Font = Enum.Font.SourceSansBold
-TextBox.TextScaled = true
 TextBox.Parent = Frame
-Instance.new("UICorner", TextBox).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", TextBox).CornerRadius = UDim.new(0,6)
 
 local Button = Instance.new("TextButton")
-Button.Size = UDim2.new(0.9, 0, 0, 35)
-Button.Position = UDim2.new(0.05, 0, 0.78, 0)
-Button.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+Button.Size = UDim2.new(0.9,0,0,35)
+Button.Position = UDim2.new(0.05,0,0.78,0)
+Button.BackgroundColor3 = Color3.fromRGB(0,170,255)
+Button.Text = "Enter"
 Button.TextColor3 = Color3.fromRGB(255,255,255)
 Button.Font = Enum.Font.FredokaOne
 Button.TextScaled = true
-Button.Text = "Enter"
 Button.Parent = Frame
-Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", Button).CornerRadius = UDim.new(0,6)
 
 ------------------------------------------------
--- 🚀 ADMIN PANEL FUNCTION
+-- 🎮 ADMIN PANEL
 ------------------------------------------------
 local function initAdmin()
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AdminGui"
-ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local Container = Instance.new("Frame")
 Container.Size = UDim2.new(0, 200, 0, 420)
-Container.Position = UDim2.new(0, 20, 0, 20)
+Container.Position = UDim2.new(0,20,0,20)
 Container.BackgroundTransparency = 1
 Container.Parent = ScreenGui
 
-local UIList = Instance.new("UIListLayout")
-UIList.Parent = Container
-UIList.Padding = UDim.new(0, 6)
+local Layout = Instance.new("UIListLayout")
+Layout.Parent = Container
+Layout.Padding = UDim.new(0,6)
 
 ------------------------------------------------
 -- LIST MAKER
@@ -89,7 +86,7 @@ UIList.Padding = UDim.new(0, 6)
 local function MakeList(title, color)
 
 local toggle = Instance.new("TextButton")
-toggle.Size = UDim2.new(1, 0, 0, 25)
+toggle.Size = UDim2.new(1,0,0,25)
 toggle.BackgroundColor3 = Color3.fromRGB(30,30,30)
 toggle.TextColor3 = Color3.fromRGB(255,255,255)
 toggle.Font = Enum.Font.SourceSansBold
@@ -98,7 +95,7 @@ toggle.Text = title .. " ▼"
 toggle.Parent = Container
 
 local frame = Instance.new("ScrollingFrame")
-frame.Size = UDim2.new(1, 0, 0, 140)
+frame.Size = UDim2.new(1,0,0,140)
 frame.BackgroundColor3 = color
 frame.BorderSizePixel = 0
 frame.ScrollBarThickness = 6
@@ -108,59 +105,83 @@ Instance.new("UIListLayout", frame)
 
 local open = true
 toggle.MouseButton1Click:Connect(function()
-	open = not open
-	frame.Visible = open
-	toggle.Text = open and (title .. " ▼") or (title .. " ►")
+open = not open
+frame.Visible = open
+toggle.Text = open and (title.." ▼") or (title.." ►")
 end)
 
 return frame
 end
 
-local AimbotList = MakeList("AIMBOT", Color3.fromRGB(40, 90, 255))
-local TeleportList = MakeList("TELEPORT", Color3.fromRGB(0, 170, 255))
+------------------------------------------------
+-- LISTS (ORDER FIXED)
+------------------------------------------------
+local AimbotList = MakeList("AIMBOT", Color3.fromRGB(40,90,255))
+local TeleportList = MakeList("TELEPORT", Color3.fromRGB(0,170,255))
 
 ------------------------------------------------
--- DRAG SYSTEM
-------------------------------------------------
-local dragging, dragStart, startPos
-
-------------------------------------------------
--- REFRESH PLAYERS
+-- STATE
 ------------------------------------------------
 local SelectedAimbotPlayer
 local SelectedTeleportPlayer
 local AimbotEnabled = false
 
+------------------------------------------------
+-- BUTTONS (NOW INCLUDED PROPERLY)
+------------------------------------------------
+local DragHandle = Instance.new("TextButton")
+DragHandle.Size = UDim2.new(1,0,0,45)
+DragHandle.BackgroundColor3 = Color3.fromRGB(0,255,0)
+DragHandle.Text = "AIMBOT OFF"
+DragHandle.TextScaled = true
+DragHandle.Font = Enum.Font.FredokaOne
+DragHandle.TextColor3 = Color3.fromRGB(255,255,255)
+DragHandle.Parent = Container
+Instance.new("UICorner", DragHandle)
+
+local TeleportButton = Instance.new("TextButton")
+TeleportButton.Size = UDim2.new(1,0,0,45)
+TeleportButton.BackgroundColor3 = Color3.fromRGB(0,170,255)
+TeleportButton.Text = "TELEPORT"
+TeleportButton.TextScaled = true
+TeleportButton.Font = Enum.Font.FredokaOne
+TeleportButton.TextColor3 = Color3.fromRGB(255,255,255)
+TeleportButton.Parent = Container
+Instance.new("UICorner", TeleportButton)
+
+------------------------------------------------
+-- REFRESH PLAYERS
+------------------------------------------------
 local function Refresh()
 
-for _, v in AimbotList:GetChildren() do
-	if v:IsA("TextButton") then v:Destroy() end
+for _,v in AimbotList:GetChildren() do
+if v:IsA("TextButton") then v:Destroy() end
 end
 
-for _, v in TeleportList:GetChildren() do
-	if v:IsA("TextButton") then v:Destroy() end
+for _,v in TeleportList:GetChildren() do
+if v:IsA("TextButton") then v:Destroy() end
 end
 
-for _, p in Players:GetPlayers() do
-	if p ~= LocalPlayer then
+for _,p in Players:GetPlayers() do
+if p ~= LocalPlayer then
 
-		local b1 = Instance.new("TextButton")
-		b1.Size = UDim2.new(1, -10, 0, 30)
-		b1.Text = p.Name
-		b1.Parent = AimbotList
-		b1.MouseButton1Click:Connect(function()
-			SelectedAimbotPlayer = p
-		end)
+local b1 = Instance.new("TextButton")
+b1.Size = UDim2.new(1,-10,0,30)
+b1.Text = p.Name
+b1.Parent = AimbotList
+b1.MouseButton1Click:Connect(function()
+SelectedAimbotPlayer = p
+end)
 
-		local b2 = Instance.new("TextButton")
-		b2.Size = UDim2.new(1, -10, 0, 30)
-		b2.Text = p.Name
-		b2.Parent = TeleportList
-		b2.MouseButton1Click:Connect(function()
-			SelectedTeleportPlayer = p
-		end)
+local b2 = Instance.new("TextButton")
+b2.Size = UDim2.new(1,-10,0,30)
+b2.Text = p.Name
+b2.Parent = TeleportList
+b2.MouseButton1Click:Connect(function()
+SelectedTeleportPlayer = p
+end)
 
-	end
+end
 end
 end
 
@@ -169,7 +190,7 @@ Players.PlayerRemoving:Connect(Refresh)
 Refresh()
 
 ------------------------------------------------
--- TOGGLES + AIM
+-- AIMBOT
 ------------------------------------------------
 RunService.RenderStepped:Connect(function()
 if not AimbotEnabled then return end
@@ -183,28 +204,7 @@ end
 end)
 
 ------------------------------------------------
--- TELEPORT BUTTON
-------------------------------------------------
-local TeleportButton = Instance.new("TextButton")
-TeleportButton.Size = UDim2.new(1, 0, 0, 45)
-TeleportButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-TeleportButton.Text = "TELEPORT"
-TeleportButton.Parent = Container
-
-------------------------------------------------
--- DRAG HANDLE
-------------------------------------------------
-local DragHandle = Instance.new("TextButton")
-DragHandle.Size = UDim2.new(1, 0, 0, 45)
-DragHandle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-DragHandle.Text = "AIMBOT OFF"
-DragHandle.TextColor3 = Color3.fromRGB(255,255,255)
-DragHandle.Font = Enum.Font.FredokaOne
-DragHandle.TextScaled = true
-DragHandle.Parent = Container
-
-------------------------------------------------
--- BUTTON LOGIC
+-- TOGGLES
 ------------------------------------------------
 DragHandle.MouseButton1Click:Connect(function()
 AimbotEnabled = not AimbotEnabled
