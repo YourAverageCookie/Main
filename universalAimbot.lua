@@ -79,44 +79,75 @@ Container.BackgroundTransparency = 1
 Container.Parent = Gui
 
 ------------------------------------------------
--- DRAG DETECTOR (NEW)
+-- DRAG DETECTOR 
 ------------------------------------------------
 local DragBar = Instance.new("TextButton")
 DragBar.Size = UDim2.new(1,0,0,35)
-DragBar.Text = "DRAG HERE"
+DragBar.Text = "DRAG"
 DragBar.BackgroundColor3 = Color3.fromRGB(40,40,40)
 DragBar.TextColor3 = Color3.new(1,1,1)
 DragBar.Parent = Container
 
 Instance.new("UICorner", DragBar)
 
+local success, dragDetector = pcall(function()
+    local dd = Instance.new("DragDetector")
+    dd.Parent = DragBar
+    return dd
+end)
+
 local dragging = false
 local dragStart
 local startPos
 
-DragBar.InputBegan:Connect(function(input)
-if input.UserInputType == Enum.UserInputType.MouseButton1 then
-dragging = true
-dragStart = input.Position
-startPos = Container.Position
-end
-end)
+if success and dragDetector then
+    dragDetector.DragStart:Connect(function(input)
+        dragging = true
+        dragStart = input.Position
+        startPos = Container.Position
+    end)
 
-UserInputService.InputChanged:Connect(function(input)
-if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-local delta = input.Position - dragStart
-Container.Position = UDim2.new(
-startPos.X.Scale,
-startPos.X.Offset + delta.X,
-startPos.Y.Scale,
-startPos.Y.Offset + delta.Y
-)
-end
-end)
+    dragDetector.DragEnd:Connect(function()
+        dragging = false
+    end)
 
-UserInputService.InputEnded:Connect(function()
-dragging = false
-end)
+    dragDetector.DragContinue:Connect(function(input)
+        if not dragging then return end
+
+        local delta = input.Position - dragStart
+        Container.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end)
+else
+    -- 🔁 fallback (old reliable method)
+    DragBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = Container.Position
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            Container.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function()
+        dragging = false
+    end)
+  end
 
 ------------------------------------------------
 -- TOGGLE BUTTON
