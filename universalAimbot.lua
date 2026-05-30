@@ -6,22 +6,23 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 -- SECURE STORAGE
-local secrets = Instance.new("Folder", RS)
+local secrets = Instance.new("Folder")
 secrets.Name = "Secrets"
+secrets.Parent = RS
 
-local SSC = Instance.new("StringValue", secrets)
+local SSC = Instance.new("StringValue")
 SSC.Name = "SuperSecretCode"
 SSC.Value = "NahIdWin"
+SSC.Parent = secrets
 
 local SecretKey = SSC.Value
 
 -- STATE
 local SelectedAimbotPlayer = nil
-local SelectedTeleportPlayer = nil
 local AimbotEnabled = false
 
 ----------------------------------------------------------------
--- 🔐 SSC LOGIN GUI (OPENING SCREEN)
+-- 🔐 SSC LOGIN GUI
 ----------------------------------------------------------------
 local LockGui = Instance.new("ScreenGui")
 LockGui.Name = "SSC_Lock"
@@ -67,7 +68,7 @@ Button.Parent = LockFrame
 Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 6)
 
 ----------------------------------------------------------------
--- 🚀 ADMIN PANEL FUNCTION (ONLY LOAD AFTER UNLOCK)
+-- 🚀 ADMIN PANEL
 ----------------------------------------------------------------
 local function initAdmin()
 
@@ -82,10 +83,10 @@ Container.Position = UDim2.new(0, 20, 0, 20)
 Container.BackgroundTransparency = 1
 Container.Parent = ScreenGui
 
--- DRAG HANDLE
+-- DRAG HANDLE / AIMBOT TOGGLE
 local DragHandle = Instance.new("TextButton")
 DragHandle.Size = UDim2.new(1, 0, 0, 45)
-DragHandle.BackgroundColor3 = Color3.fromRGB(255,0,0)
+DragHandle.BackgroundColor3 = Color3.fromRGB(0,255,0)
 DragHandle.Text = "AIMBOT OFF"
 DragHandle.TextColor3 = Color3.fromRGB(255,255,255)
 DragHandle.Font = Enum.Font.FredokaOne
@@ -93,24 +94,9 @@ DragHandle.TextScaled = true
 DragHandle.Parent = Container
 Instance.new("UICorner", DragHandle).CornerRadius = UDim.new(0,10)
 
-local stroke = Instance.new("UIStroke", DragHandle)
-stroke.Thickness = 2
-
--- TELEPORT BUTTON
-local TeleportButton = Instance.new("TextButton")
-TeleportButton.Size = UDim2.new(1, 0, 0, 45)
-TeleportButton.Position = UDim2.new(0, 0, 0, 50)
-TeleportButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-TeleportButton.Text = "TELEPORT"
-TeleportButton.Font = Enum.Font.FredokaOne
-TeleportButton.TextScaled = true
-TeleportButton.Parent = Container
-Instance.new("UICorner", TeleportButton).CornerRadius = UDim.new(0,10)
-
-Instance.new("UIStroke", TeleportButton).Color = Color3.fromRGB(0,0,0)
-
 -- LIST MAKER
 local function MakeList(y, color, title)
+
 local toggle = Instance.new("TextButton")
 toggle.Size = UDim2.new(1,0,0,25)
 toggle.Position = UDim2.new(0,0,0,y)
@@ -118,13 +104,16 @@ toggle.Text = title.." ▼"
 toggle.Parent = Container
 
 local frame = Instance.new("ScrollingFrame")
-frame.Size = UDim2.new(1,0,0,140)
+frame.Size = UDim2.new(1,0,0,260)
 frame.Position = UDim2.new(0,0,0,y+25)
 frame.BackgroundColor3 = color
 frame.ScrollBarThickness = 6
+frame.BorderSizePixel = 0
 frame.Parent = Container
 
-Instance.new("UIListLayout", frame)
+local layout = Instance.new("UIListLayout")
+layout.Parent = frame
+layout.Padding = UDim.new(0,4)
 
 local open = true
 toggle.MouseButton1Click:Connect(function()
@@ -136,56 +125,32 @@ end)
 return frame
 end
 
+-- ONLY ONE LIST NOW
 local AimbotList = MakeList(105, Color3.fromRGB(40,90,255), "AIMBOT")
-local TeleportList = MakeList(270, Color3.fromRGB(0,170,255), "TELEPORT")
 
--- DRAG
-local dragging, dragStart, startPos
-
-DragHandle.InputBegan:Connect(function(input)
-if input.UserInputType == Enum.UserInputType.MouseButton1 then
-dragging = true
-dragStart = input.Position
-startPos = Container.Position
-end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-local delta = input.Position - dragStart
-Container.Position = UDim2.new(
-startPos.X.Scale,
-startPos.X.Offset + delta.X,
-startPos.Y.Scale,
-startPos.Y.Offset + delta.Y
-)
-end
-end)
-
-UserInputService.InputEnded:Connect(function()
-dragging = false
-end)
-
--- REFRESH
+----------------------------------------------------------------
+-- PLAYER STATE
+----------------------------------------------------------------
 local function Refresh()
-for _,v in AimbotList:GetChildren() do if v:IsA("TextButton") then v:Destroy() end end
-for _,v in TeleportList:GetChildren() do if v:IsA("TextButton") then v:Destroy() end end
+
+for _,v in AimbotList:GetChildren() do
+if v:IsA("TextButton") then v:Destroy() end
+end
 
 for _,p in Players:GetPlayers() do
 if p ~= LocalPlayer then
 
-local b1 = Instance.new("TextButton")
-b1.Text = p.Name
-b1.Parent = AimbotList
-b1.MouseButton1Click:Connect(function()
-SelectedAimbotPlayer = p
-end)
+local btn = Instance.new("TextButton")
+btn.Size = UDim2.new(1,-10,0,30)
+btn.BackgroundColor3 = Color3.fromRGB(0,120,255)
+btn.TextColor3 = Color3.fromRGB(255,255,255)
+btn.Font = Enum.Font.SourceSansBold
+btn.TextScaled = true
+btn.Text = p.Name
+btn.Parent = AimbotList
 
-local b2 = Instance.new("TextButton")
-b2.Text = p.Name
-b2.Parent = TeleportList
-b2.MouseButton1Click:Connect(function()
-SelectedTeleportPlayer = p
+btn.MouseButton1Click:Connect(function()
+SelectedAimbotPlayer = p
 end)
 
 end
@@ -194,28 +159,12 @@ end
 
 Players.PlayerAdded:Connect(Refresh)
 Players.PlayerRemoving:Connect(Refresh)
+task.wait(0.2)
 Refresh()
 
--- TOGGLES
-DragHandle.MouseButton1Click:Connect(function()
-AimbotEnabled = not AimbotEnabled
-DragHandle.Text = AimbotEnabled and "AIMBOT ON" or "AIMBOT OFF"
-DragHandle.BackgroundColor3 = AimbotEnabled and Color3.fromRGB(255,0,0) or Color3.fromRGB(0,255,0)
-end)
-
-TeleportButton.MouseButton1Click:Connect(function()
-local char = SelectedTeleportPlayer and SelectedTeleportPlayer.Character
-local hrp = char and char:FindFirstChild("HumanoidRootPart")
-
-local my = LocalPlayer.Character
-local myHRP = my and my:FindFirstChild("HumanoidRootPart")
-
-if hrp and myHRP then
-myHRP.CFrame = hrp.CFrame + Vector3.new(2,0,0)
-end
-end)
-
--- AIM LOOP
+----------------------------------------------------------------
+-- AIMBOT
+----------------------------------------------------------------
 RunService.RenderStepped:Connect(function()
 if not AimbotEnabled then return end
 
@@ -227,10 +176,21 @@ Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, hrp.Position)
 end
 end)
 
-end
+-- TOGGLE
+DragHandle.MouseButton1Click:Connect(function()
+	AimbotEnabled = not AimbotEnabled
+
+	if AimbotEnabled then
+		DragHandle.Text = "AIMBOT ON"
+		DragHandle.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- green
+	else
+		DragHandle.Text = "AIMBOT OFF"
+		DragHandle.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- red
+	end
+end)
 
 ----------------------------------------------------------------
--- 🔓 LOGIN CHECK
+-- LOGIN CHECK
 ----------------------------------------------------------------
 Button.MouseButton1Click:Connect(function()
 if TextBox.Text == SecretKey then
