@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
@@ -19,6 +20,7 @@ Container.Position = UDim2.new(0, 20, 0, 20)
 Container.BackgroundTransparency = 1
 Container.Parent = ScreenGui
 
+-- DRAG HANDLE
 local DragHandle = Instance.new("TextButton")
 DragHandle.Size = UDim2.new(1, 0, 0, 45)
 DragHandle.Position = UDim2.new(0, 0, 0, 0)
@@ -35,6 +37,7 @@ local stroke = Instance.new("UIStroke", DragHandle)
 stroke.Thickness = 2
 stroke.Color = Color3.fromRGB(0, 0, 0)
 
+-- TELEPORT BUTTON
 local TeleportButton = Instance.new("TextButton")
 TeleportButton.Size = UDim2.new(1, 0, 0, 45)
 TeleportButton.Position = UDim2.new(0, 0, 0, 50)
@@ -47,6 +50,7 @@ TeleportButton.Parent = Container
 
 Instance.new("UICorner", TeleportButton).CornerRadius = UDim.new(0, 10)
 
+-- LIST MAKER
 local function MakeList(y, color, title)
 	local open = true
 
@@ -82,7 +86,7 @@ end
 local AimbotList, layout1 = MakeList(105, Color3.fromRGB(40, 90, 255), "AIMBOT")
 local TeleportList, layout2 = MakeList(270, Color3.fromRGB(0, 170, 255), "TELEPORT")
 
--- DRAG WHOLE UI (uses top button as handle but moves container)
+-- DRAG SYSTEM (FIXED)
 local dragging = false
 local dragStart
 local startPos
@@ -103,8 +107,6 @@ DragHandle.InputBegan:Connect(function(input)
 	end
 end)
 
-UserInputService = game:GetService("UserInputService")
-
 UserInputService.InputChanged:Connect(function(input)
 	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
 	or input.UserInputType == Enum.UserInputType.Touch) then
@@ -119,6 +121,7 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
+-- REFRESH LISTS
 local function RefreshLists()
 	for _, v in AimbotList:GetChildren() do
 		if v:IsA("TextButton") then v:Destroy() end
@@ -166,6 +169,7 @@ Players.PlayerAdded:Connect(RefreshLists)
 Players.PlayerRemoving:Connect(RefreshLists)
 RefreshLists()
 
+-- TOGGLES
 DragHandle.MouseButton1Click:Connect(function()
 	AimbotEnabled = not AimbotEnabled
 	DragHandle.Text = AimbotEnabled and "AIMBOT ON" or "AIMBOT OFF"
@@ -184,6 +188,7 @@ TeleportButton.MouseButton1Click:Connect(function()
 	end
 end)
 
+-- AIM
 RunService.RenderStepped:Connect(function()
 	if not AimbotEnabled then return end
 
