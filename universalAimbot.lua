@@ -86,13 +86,16 @@ Container.Parent = ScreenGui
 -- DRAG HANDLE / AIMBOT TOGGLE
 local DragHandle = Instance.new("TextButton")
 DragHandle.Size = UDim2.new(1, 0, 0, 45)
-DragHandle.BackgroundColor3 = Color3.fromRGB(255,0,0)
+DragHandle.BackgroundColor3 = Color3.fromRGB(0,255,0)
 DragHandle.Text = "AIMBOT OFF"
 DragHandle.TextColor3 = Color3.fromRGB(255,255,255)
 DragHandle.Font = Enum.Font.FredokaOne
 DragHandle.TextScaled = true
 DragHandle.Parent = Container
 Instance.new("UICorner", DragHandle).CornerRadius = UDim.new(0,10)
+
+local stroke = Instance.new("UIStroke", DragHandle)
+stroke.Thickness = 2
 
 -- LIST MAKER
 local function MakeList(y, color, title)
@@ -104,16 +107,13 @@ toggle.Text = title.." ▼"
 toggle.Parent = Container
 
 local frame = Instance.new("ScrollingFrame")
-frame.Size = UDim2.new(1,0,0,260)
+frame.Size = UDim2.new(1,0,0,140)
 frame.Position = UDim2.new(0,0,0,y+25)
 frame.BackgroundColor3 = color
 frame.ScrollBarThickness = 6
-frame.BorderSizePixel = 0
 frame.Parent = Container
 
-local layout = Instance.new("UIListLayout")
-layout.Parent = frame
-layout.Padding = UDim.new(0,4)
+Instance.new("UIListLayout", frame)
 
 local open = true
 toggle.MouseButton1Click:Connect(function()
@@ -125,14 +125,10 @@ end)
 return frame
 end
 
--- ONLY ONE LIST NOW
 local AimbotList = MakeList(105, Color3.fromRGB(40,90,255), "AIMBOT")
 
-----------------------------------------------------------------
--- PLAYER STATE
-----------------------------------------------------------------
+-- REFRESH
 local function Refresh()
-
 for _,v in AimbotList:GetChildren() do
 if v:IsA("TextButton") then v:Destroy() end
 end
@@ -140,16 +136,10 @@ end
 for _,p in Players:GetPlayers() do
 if p ~= LocalPlayer then
 
-local btn = Instance.new("TextButton")
-btn.Size = UDim2.new(1,-10,0,30)
-btn.BackgroundColor3 = Color3.fromRGB(0,120,255)
-btn.TextColor3 = Color3.fromRGB(255,255,255)
-btn.Font = Enum.Font.SourceSansBold
-btn.TextScaled = true
-btn.Text = p.Name
-btn.Parent = AimbotList
-
-btn.MouseButton1Click:Connect(function()
+local b1 = Instance.new("TextButton")
+b1.Text = p.Name
+b1.Parent = AimbotList
+b1.MouseButton1Click:Connect(function()
 SelectedAimbotPlayer = p
 end)
 
@@ -159,12 +149,16 @@ end
 
 Players.PlayerAdded:Connect(Refresh)
 Players.PlayerRemoving:Connect(Refresh)
-task.wait(0.2)
 Refresh()
 
-----------------------------------------------------------------
--- AIMBOT
-----------------------------------------------------------------
+-- TOGGLE
+DragHandle.MouseButton1Click:Connect(function()
+AimbotEnabled = not AimbotEnabled
+DragHandle.Text = AimbotEnabled and "AIMBOT ON" or "AIMBOT OFF"
+DragHandle.BackgroundColor3 = AimbotEnabled and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
+end)
+
+-- AIM LOOP
 RunService.RenderStepped:Connect(function()
 if not AimbotEnabled then return end
 
@@ -175,31 +169,19 @@ if hrp then
 Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, hrp.Position)
 end
 end)
-	
--- TOGGLE
-	
-DragHandle.MouseButton1Click:Connect(function()
-	AimbotEnabled = not AimbotEnabled
 
-	if AimbotEnabled then
-		DragHandle.Text = "AIMBOT ON"
-		DragHandle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-	else
-		DragHandle.Text = "AIMBOT OFF"
-		DragHandle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-	end
-end)
+end
 
 ----------------------------------------------------------------
--- LOGIN CHECK
+-- 🔓 LOGIN CHECK
 ----------------------------------------------------------------
 Button.MouseButton1Click:Connect(function()
-	if TextBox.Text == SecretKey then
-		LockGui:Destroy()
-		initAdmin()
-	else
-		Button.Text = "Wrong Code"
-		task.wait(1)
-		Button.Text = "Enter"
-	end
+if TextBox.Text == SecretKey then
+LockGui:Destroy()
+initAdmin()
+else
+Button.Text = "Wrong Code"
+task.wait(1)
+Button.Text = "Enter"
+end
 end)
