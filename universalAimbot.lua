@@ -10,9 +10,9 @@ secrets.Name = "Secrets"
 
 local SSC = Instance.new("StringValue", secrets)
 SSC.Name = "SuperSecretCode"
-SSC.Value = "MueedMightBeTheGoat"
+SSC.Value = "NahIdWin"
 
-local SecretKey = SuperSecretCode.Value
+local SecretKey = SSC.Value
 
 local SelectedAimbotPlayer = nil
 local SelectedTeleportPlayer = nil
